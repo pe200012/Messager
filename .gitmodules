@@ -1,0 +1,3 @@
+[submodule "JsExt"]
+	path = JsExt
+	url = git@github.com:pe200012/JsExt.git
