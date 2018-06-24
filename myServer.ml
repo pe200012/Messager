@@ -51,11 +51,11 @@ let callback fw fr a r w =
   Lwt.pick [reader;writer] |> ignore;
   Deferred.unit
 
-let run fw fr =
+let run fw fr port =
   let server = Tcp.Server.create
       ?max_connections:(Some 1)
       ?backlog:(Some 5)
-      (Tcp.Where_to_listen.of_port 8080)
+      (Tcp.Where_to_listen.of_port port)
       ~on_handler_error:`Raise
       (callback fw fr)
   in
