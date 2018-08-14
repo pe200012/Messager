@@ -1,0 +1,10 @@
+[package]
+name = "messager_server"
+version = "0.1.0"
+authors = ["pe200012 <1326263755@qq.com>"]
+
+[dependencies]
+serde = "1.0.70"
+serde_json = "1.0.24"
+serde_derive = "1.0.70"
+mysql = "14.0.0"
