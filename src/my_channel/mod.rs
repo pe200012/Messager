@@ -3,8 +3,10 @@ extern crate serde_json;
 use self::serde_json::Value;
 use account;
 use client;
+use std::net::SocketAddr;
 use std::net::UdpSocket;
 use std::str;
+use std::thread;
 
 #[derive(Debug)]
 enum Pattern {
@@ -25,8 +27,8 @@ pub struct MyChannel {
     pub name: String,
     // ssl context needed
     listener: UdpSocket,
-    sessions: Vec<String>,
-    account_system: &'static account::AccountsDB,
+    sessions: Vec<SocketAddr>,
+    account_system: &'static mut account::AccountsDB,
     pub max_users: usize,
 }
 
@@ -35,7 +37,7 @@ impl MyChannel {
         name: String,
         addr: &'static str,
         max_users: usize,
-        account_system: &'static account::AccountsDB,
+        account_system: &'static mut account::AccountsDB,
     ) -> MyChannel {
         MyChannel {
             name,
@@ -45,20 +47,56 @@ impl MyChannel {
             max_users,
         }
     }
-    pub fn run(&self) {
+    pub fn run(&'static mut self) {
         let mut i = 0;
         let mut buf = [0; 1024];
         loop {
             let (amt, src) = self.listener.recv_from(&mut buf).unwrap();
             let msg = str::from_utf8(&buf[..amt]).unwrap();
             let msg: Request = serde_json::from_str(&msg).unwrap();
-            println!("{:?}", msg);
+            println!("{:?} from {:?}", msg, src);
+            self.sessions.push(src);
             let patt = deliver(msg);
             println!("{:?}", patt);
-            self.deal(patt);
+            self.deal(patt, src);
+            i = i + 1;
         }
     }
-    fn deal(&self, patt: Pattern) {}
+    fn deal(&mut self, patt: Pattern, remote: SocketAddr) {
+        println!("Pattern: {:?}", patt);
+        match patt {
+            Pattern::Login(info) => {
+                match self.account_system.authorize(&info.name, &info.password) {
+                    Err(_) => {
+                        self.listener.send_to(b"Account Not Found", remote).unwrap();
+                    }
+                    Ok(false) => {
+                        self.listener.send_to(b"Wrong Password", remote).unwrap();
+                    }
+                    Ok(true) => {
+                        // TODO deal with chating process
+                    }
+                }
+            }
+            Pattern::Register(info) => {
+                match self.account_system.register(&info.name, &info.password) {
+                    false => {
+                        self.listener
+                            .send_to(b"Already exists, please login", remote).unwrap();
+                    }
+                    true => {
+                        // TODO add some logic for dealing with registeration
+                    }
+                }
+            }
+            Pattern::Comment(comment) => {
+                // TODO Make a broadcast method
+            }
+            Pattern::Exit(id) => {
+                // TODO exit action
+            }
+        }
+    }
 }
 
 fn deliver<'a>(msg: Request<'a>) -> Pattern {
