@@ -26,7 +26,7 @@ impl AccountsDB {
             data: AccountsPresent { accounts: vec![] },
         }
     }
-    pub fn import(&mut self, file: &'static str) {
+    pub fn import<'a>(&mut self, file: &'a str) {
         let mut f = File::open(file).unwrap();
         let mut buf = vec![];
         f.read_to_end(&mut buf).unwrap();
@@ -34,13 +34,13 @@ impl AccountsDB {
         let ap: AccountsPresent = serde_json::from_str(&buf).unwrap();
         self.data = ap;
     }
-    pub fn export(&mut self, file: &'static str) -> Result<usize, Error> {
+    pub fn export<'a>(&mut self, file: &'a str) -> Result<usize, Error> {
         let mut f = File::create(file).unwrap();
         let contents = serde_json::to_string(&self.data).unwrap();
         let contents = contents.as_bytes();
         f.write(&contents)
     }
-    pub fn exists(&self, id: &'static str) -> bool {
+    pub fn exists<'a>(&self, id: &'a str) -> bool {
         for (_, account) in self.data.accounts.iter().enumerate() {
             if account.name == *id {
                 return true;
@@ -48,7 +48,7 @@ impl AccountsDB {
         }
         false
     }
-    pub fn query(&self, id: &'static str) -> Option<AccountInfo> {
+    pub fn query<'a>(&self, id: &'a str) -> Option<AccountInfo> {
         for (_, account) in self.data.accounts.iter().enumerate() {
             if account.name == *id {
                 return Some(account.clone());
@@ -56,7 +56,7 @@ impl AccountsDB {
         }
         None
     }
-    pub fn authorize(&self, id: &'static str, password: &'static str) -> Result<bool, Error> {
+    pub fn authorize<'a>(&self, id: &'a str, password: &'a str) -> Result<bool, Error> {
         match self.query(id) {
             None => return Err(Error::new(ErrorKind::NotFound, "User not found")),
             Some(a) => {
@@ -68,7 +68,7 @@ impl AccountsDB {
             }
         }
     }
-    pub fn register(&mut self, id: &'static str, password: &'static str) -> bool {
+    pub fn register<'a>(&mut self, id: &'a str, password: &'a str) -> bool {
         match self.query(id) {
             Some(_) => false,
             None => {
