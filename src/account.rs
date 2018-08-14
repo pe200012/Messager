@@ -6,8 +6,8 @@ use std::str;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AccountInfo {
-    name: String,
-    password: String,
+    pub name: String,
+    pub password: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
