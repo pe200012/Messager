@@ -21,7 +21,7 @@ pub struct AccountsDB {
 }
 
 impl AccountsDB {
-    pub fn create() -> AccountsDB {
+    pub fn new() -> AccountsDB {
         AccountsDB {
             data: AccountsPresent { accounts: vec![] },
         }
