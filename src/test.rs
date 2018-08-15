@@ -1,4 +1,5 @@
 use account;
+use my_channel;
 use std::fs::File;
 use std::io::prelude::*;
 
@@ -70,5 +71,12 @@ mod AccountsDB {
         println!("{:?}", db.register("new_account", "new_password"));
         println!("{:?}", db.query("new_account"));
         assert_eq!(db.exists("new_account"), true);
+    }
+}
+
+#[cfg(test)]
+mod Channel {
+    fn create_work() {
+        let ch = my_channel::MyChannel::new("Channel name", "0.0.0.0:12110", 5, account::AccountsDB::new())
     }
 }
