@@ -1,12 +1,12 @@
 extern crate serde_json;
 
+use my_channel::serde_json::Value::Null;
 use self::serde_json::Value;
 use account;
 use client;
 use std::net::SocketAddr;
 use std::net::UdpSocket;
 use std::str;
-use std::thread;
 
 #[derive(Debug)]
 enum Pattern {
@@ -18,6 +18,12 @@ enum Pattern {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Request<'a> {
+    command: &'a str,
+    args: Value,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Response<'a> {
     command: &'a str,
     args: Value,
 }
@@ -64,36 +70,72 @@ impl MyChannel {
     }
     fn deal(&mut self, patt: Pattern, remote: SocketAddr) {
         println!("Pattern: {:?}", patt);
-        match patt {
+        let res : Response = match patt {
             Pattern::Login(info) => {
                 match self.account_system.authorize(&info.name, &info.password) {
                     Err(_) => {
-                        self.listener.send_to(b"Account Not Found", remote).unwrap();
-                    }
+                        Response {
+                            command: "AccountNotFound",
+                            args: Null,
+                        }
+                    },
                     Ok(false) => {
-                        self.listener.send_to(b"Wrong Password", remote).unwrap();
-                    }
+                        Response {
+                            command: "WrongPassword",
+                            args: Null,
+                        }
+                    },
                     Ok(true) => {
-                        // TODO deal with chating process
-                    }
+                        Response {
+                            command: "LoginSuccess",
+                            args: Null,
+                        }
+                    },
                 }
             }
             Pattern::Register(info) => {
                 match self.account_system.register(&info.name, &info.password) {
                     false => {
-                        self.listener
-                            .send_to(b"Already exists, please login", remote).unwrap();
-                    }
+                        Response {
+                            command: "AccountAlreadyExists",
+                            args: Null,
+                        }
+                    },
                     true => {
-                        // TODO add some logic for dealing with registeration
+                        Response {
+                            command: "RegisterSuccess",
+                            args: Null,
+                        }
                     }
                 }
             }
             Pattern::Comment(comment) => {
-                // TODO Make a broadcast method
-            }
+                self.broadcast(comment);
+                Response {
+                    command: "CommentSuccess",
+                    args: Null,
+                }
+            },
             Pattern::Exit(id) => {
-                // TODO exit action
+                // Nightly feature
+                // self.sessions.remove_item(&remote).unwrap();
+                for (index, session) in self.sessions.iter().enumerate() {
+                    if *session == remote {
+                        self.sessions.remove(index);
+                        break;
+                    }
+                }
+                Response {
+                    command: "ExitSuccess",
+                    args: Null,
+                }
+            },
+        };
+    }
+    fn broadcast(&self, comment: client::CommentInfo) {
+        for session in self.sessions.iter().enumerate() {
+            match self.listener.send_to(b"", session) {
+                _ => ()
             }
         }
     }
