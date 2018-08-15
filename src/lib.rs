@@ -1,3 +1,4 @@
+#![feature(vec_remove_item)]
 #[macro_use]
 extern crate serde_derive;
 

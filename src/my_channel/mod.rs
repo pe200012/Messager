@@ -117,24 +117,18 @@ impl MyChannel {
                 }
             },
             Pattern::Exit(id) => {
-                // Nightly feature
-                // self.sessions.remove_item(&remote).unwrap();
-                for (index, session) in self.sessions.iter().enumerate() {
-                    if *session == remote {
-                        self.sessions.remove(index);
-                        break;
-                    }
-                }
+                self.sessions.remove_item(&remote).unwrap();
                 Response {
                     command: "ExitSuccess",
                     args: Null,
                 }
             },
         };
+        self.listener.send_to(serde_json::to_string(&res).unwrap().as_bytes(), remote).unwrap();
     }
     fn broadcast(&self, comment: client::CommentInfo) {
-        for session in self.sessions.iter().enumerate() {
-            match self.listener.send_to(b"", session) {
+        for (_, session) in self.sessions.iter().enumerate() {
+            match self.listener.send_to(serde_json::to_string(&comment).unwrap().as_bytes(), session) {
                 _ => ()
             }
         }
