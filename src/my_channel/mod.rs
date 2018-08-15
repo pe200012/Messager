@@ -24,7 +24,7 @@ struct Request<'a> {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Response<'a> {
-    command: &'a str,
+    result: &'a str,
     args: Value,
 }
 
@@ -53,7 +53,7 @@ impl<'a> MyChannel<'a> {
             max_users,
         }
     }
-    pub fn run(&'static mut self) {
+    pub fn run(&'a mut self) {
         let mut i = 0;
         let mut buf = [0; 1024];
         loop {
@@ -74,26 +74,26 @@ impl<'a> MyChannel<'a> {
             Pattern::Login(info) => match self.account_system.authorize(&info.name, &info.password)
             {
                 Err(_) => Response {
-                    command: "AccountNotFound",
+                    result: "AccountNotFound",
                     args: Null,
                 },
                 Ok(false) => Response {
-                    command: "WrongPassword",
+                    result: "WrongPassword",
                     args: Null,
                 },
                 Ok(true) => Response {
-                    command: "LoginSuccess",
+                    result: "LoginSuccess",
                     args: Null,
                 },
             },
             Pattern::Register(info) => {
                 match self.account_system.register(&info.name, &info.password) {
                     false => Response {
-                        command: "AccountAlreadyExists",
+                        result: "AccountAlreadyExists",
                         args: Null,
                     },
                     true => Response {
-                        command: "RegisterSuccess",
+                        result: "RegisterSuccess",
                         args: Null,
                     },
                 }
@@ -101,14 +101,14 @@ impl<'a> MyChannel<'a> {
             Pattern::Comment(comment) => {
                 self.broadcast(comment);
                 Response {
-                    command: "CommentSuccess",
+                    result: "CommentSuccess",
                     args: Null,
                 }
             }
             Pattern::Exit(id) => {
                 self.sessions.remove_item(&remote).unwrap();
                 Response {
-                    command: "ExitSuccess",
+                    result: "ExitSuccess",
                     args: Null,
                 }
             }
