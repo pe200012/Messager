@@ -1,9 +1,9 @@
 extern crate serde_json;
 
-use my_channel::serde_json::Value::Null;
 use self::serde_json::Value;
 use account;
 use client;
+use my_channel::serde_json::Value::Null;
 use std::net::SocketAddr;
 use std::net::UdpSocket;
 use std::str;
@@ -70,43 +70,32 @@ impl<'a> MyChannel<'a> {
     }
     fn deal(&mut self, patt: Pattern, remote: SocketAddr) {
         println!("Pattern: {:?}", patt);
-        let res : Response = match patt {
-            Pattern::Login(info) => {
-                match self.account_system.authorize(&info.name, &info.password) {
-                    Err(_) => {
-                        Response {
-                            command: "AccountNotFound",
-                            args: Null,
-                        }
-                    },
-                    Ok(false) => {
-                        Response {
-                            command: "WrongPassword",
-                            args: Null,
-                        }
-                    },
-                    Ok(true) => {
-                        Response {
-                            command: "LoginSuccess",
-                            args: Null,
-                        }
-                    },
-                }
-            }
+        let res: Response = match patt {
+            Pattern::Login(info) => match self.account_system.authorize(&info.name, &info.password)
+            {
+                Err(_) => Response {
+                    command: "AccountNotFound",
+                    args: Null,
+                },
+                Ok(false) => Response {
+                    command: "WrongPassword",
+                    args: Null,
+                },
+                Ok(true) => Response {
+                    command: "LoginSuccess",
+                    args: Null,
+                },
+            },
             Pattern::Register(info) => {
                 match self.account_system.register(&info.name, &info.password) {
-                    false => {
-                        Response {
-                            command: "AccountAlreadyExists",
-                            args: Null,
-                        }
+                    false => Response {
+                        command: "AccountAlreadyExists",
+                        args: Null,
                     },
-                    true => {
-                        Response {
-                            command: "RegisterSuccess",
-                            args: Null,
-                        }
-                    }
+                    true => Response {
+                        command: "RegisterSuccess",
+                        args: Null,
+                    },
                 }
             }
             Pattern::Comment(comment) => {
@@ -115,21 +104,26 @@ impl<'a> MyChannel<'a> {
                     command: "CommentSuccess",
                     args: Null,
                 }
-            },
+            }
             Pattern::Exit(id) => {
                 self.sessions.remove_item(&remote).unwrap();
                 Response {
                     command: "ExitSuccess",
                     args: Null,
                 }
-            },
+            }
         };
-        self.listener.send_to(serde_json::to_string(&res).unwrap().as_bytes(), remote).unwrap();
+        self.listener
+            .send_to(serde_json::to_string(&res).unwrap().as_bytes(), remote)
+            .unwrap();
     }
     fn broadcast(&self, comment: client::CommentInfo) {
         for (_, session) in self.sessions.iter().enumerate() {
-            match self.listener.send_to(serde_json::to_string(&comment).unwrap().as_bytes(), session) {
-                _ => ()
+            match self
+                .listener
+                .send_to(serde_json::to_string(&comment).unwrap().as_bytes(), session)
+            {
+                _ => (),
             }
         }
     }
