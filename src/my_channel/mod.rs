@@ -29,22 +29,22 @@ struct Response<'a> {
 }
 
 #[derive(Debug)]
-pub struct MyChannel {
+pub struct MyChannel<'a> {
     pub name: String,
     // ssl context needed
     listener: UdpSocket,
     sessions: Vec<SocketAddr>,
-    account_system: &'static mut account::AccountsDB,
+    account_system: &'a mut account::AccountsDB,
     pub max_users: usize,
 }
 
-impl MyChannel {
+impl<'a> MyChannel<'a> {
     pub fn new(
         name: String,
         addr: &'static str,
         max_users: usize,
-        account_system: &'static mut account::AccountsDB,
-    ) -> MyChannel {
+        account_system: &'a mut account::AccountsDB,
+    ) -> MyChannel<'a> {
         MyChannel {
             name,
             listener: UdpSocket::bind(addr).unwrap(),
